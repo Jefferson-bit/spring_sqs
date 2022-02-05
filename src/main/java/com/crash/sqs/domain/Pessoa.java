@@ -19,6 +19,7 @@ public class Pessoa {
     @Column(nullable = false)
     private  LocalDate dataDeNascimento;
 
+    @Deprecated
     public Pessoa(){
     }
 

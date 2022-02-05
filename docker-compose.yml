@@ -11,5 +11,58 @@ services:
     volumes:
       - mysql-volume:/var/lib/mysql
 
+  awslocalstack:
+      image: localstack/localstack
+      container_name: aws_local_stack
+      ports:
+        - 4566-4599:4566-4599
+      environment:
+        - DATA_DIR=/tmp/localstack/data
+        - LAMBDA_EXECUTOR=docker
+        - SERVICES=sqs,sns,dynamodb
+        - AWS_DEFAULT_REGION=sa-east-1
+      volumes:
+        - "./tmp/localstack:/tmp/localstack/data"
+        - "/var/run/docker.sock:/var/run/docker.sock"
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+        interval: 15s
+        timeout: 10s
+        retries: 5
+
+  sqs:
+    image: amazon/aws-cli
+    depends_on:
+      - awslocalstack
+    entrypoint: sh -c
+    volumes:
+      - ./scripts/:/home/scripts
+    command: >
+      "/usr/local/bin/aws
+      --endpoint-url=http://awslocalstack:4566 sqs create-queue --queue-name "fila-local"
+      "
+    environment:
+      AWS_ACCESS_KEY_ID: teste
+      AWS_SECRET_ACCESS_KEY: teste
+      AWS_DEFAULT_REGION: sa-east-1
+
+  sns:
+    image: amazon/aws-cli
+    depends_on:
+      - awslocalstack
+    entrypoint: sh -c
+    volumes:
+      - ./scripts/:/home/scripts
+    command: >
+      "/usr/local/bin/aws
+      --endpoint-url=http://awslocalstack:4566 sns create-topic --name "sns-topico-local"
+      && /usr/local/bin/aws
+      --endpoint-url=http://awslocalstack:4566 sns subscribe --topic-arn arn:aws:sns:sa-east-1:000000000000:sns-topico-local
+      --protocol sqs --notification-endpoint http://awslocalstack:4566/000000000000/fila-local"
+    environment:
+      AWS_ACCESS_KEY_ID: teste
+      AWS_SECRET_ACCESS_KEY: teste
+      AWS_DEFAULT_REGION: sa-east-1
+
 volumes:
   mysql-volume:

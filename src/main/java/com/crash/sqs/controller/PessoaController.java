@@ -20,7 +20,6 @@ public class PessoaController {
         this.pessoaRepository = pessoaRepository;
     }
 
-
     @GetMapping
     public ResponseEntity<Pessoa> buscaPessoaPorId() {
         Pessoa pessoa = new Pessoa("Rodrigo", "Silva", 15, LocalDate.of(2000, Month.JANUARY, 12));
